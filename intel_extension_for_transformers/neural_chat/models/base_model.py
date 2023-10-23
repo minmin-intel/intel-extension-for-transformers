@@ -212,7 +212,11 @@ class BaseModel(ABC):
 
         query_include_prompt = False
         self.get_conv_template(self.model_name, config.task)
+        # MH add
+        # print('prompt template for predict: ',self.conv_template.get_prompt())
+        #
         if self.conv_template.roles[0] in query and self.conv_template.roles[1] in query:
+            print('query_include_prompt = True')
             query_include_prompt = True
 
         # plugin pre actions
@@ -235,8 +239,10 @@ class BaseModel(ABC):
         assert query is not None, "Query cannot be None."
 
         if not query_include_prompt:
-            query = self.prepare_prompt(query, self.model_name, config.task)
+            print('query_include_prompt = False')
+            query = self.prepare_prompt(query, self.model_name, config.task, config.system_message)
         # LLM inference
+        print('query passed into LLM: ', query)
         response = predict(**construct_parameters(query, self.model_name, self.device, config))
 
         # plugin post actions
@@ -256,7 +262,7 @@ class BaseModel(ABC):
                 "instance": None
             }
 
-        return response
+        return query, response
 
     def chat_stream(self, query, config=None):
         """
@@ -316,10 +322,12 @@ class BaseModel(ABC):
                 raise NotImplementedError(f"Unsupported task {task}.")
             self.conv_template = PromptTemplate(name)
 
-    def prepare_prompt(self, prompt: str, model_path: str, task: str = ""):
+    def prepare_prompt(self, prompt: str, model_path: str, task: str = "", system_message: str=""):
         self.get_conv_template(model_path, task)
+        self.conv_template.set_system_message(system_message)
         self.conv_template.append_message(self.conv_template.roles[0], prompt)
         self.conv_template.append_message(self.conv_template.roles[1], None)
+        print('after prepare prompt: ', self.conv_template.get_prompt())
         return self.conv_template.get_prompt()
 
     def register_plugin_instance(self, plugin_name, instance):

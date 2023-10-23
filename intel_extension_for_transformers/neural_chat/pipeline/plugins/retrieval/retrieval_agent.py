@@ -46,15 +46,18 @@ class Agent_QA():
         else:
             print("The given file path is unavailable, please check and try again!")
         if append:
+            print('Adding documents to docstore')
             self.doc_parser = DocumentIndexing(retrieval_type=self.retrieval_type, document_store=document_store,
                                                persist_dir=persist_dir, process=process,
                                                embedding_model=embedding_model, max_length=max_length,
                                                index_name = index_name)
             self.db = self.doc_parser.KB_construct(self.input_path)
+            print('Finished adding documents to docstore')
         else:
             print("Make sure the current persist path is new!")
             if os.path.exists(persist_dir):
                 if bool(os.listdir(persist_dir)):
+                    print('Loading existing doc store...')
                     self.doc_parser = DocumentIndexing(retrieval_type=self.retrieval_type,
                                                    document_store=document_store,
                                                    persist_dir=persist_dir, process=process,
@@ -62,6 +65,7 @@ class Agent_QA():
                                                    max_length=max_length,
                                                    index_name=index_name)
                     self.db = self.doc_parser.load(self.input_path)
+                    print('Finished loading docstore!')
                 else:
                     self.doc_parser = DocumentIndexing(retrieval_type=self.retrieval_type,
                                                        document_store=document_store,

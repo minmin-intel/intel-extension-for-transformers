@@ -156,3 +156,7 @@ class PromptTemplate:
     def get_prompt(self) -> str:
         return self.conv.get_prompt()
     
+    def set_system_message(self, system_message: str):
+        """Set the system message."""
+        self.conv.system_message = system_message
+    

@@ -397,6 +397,7 @@ class GenerationConfig:
     use_fp16: bool = False
     ipex_int8: bool = False
     task: str = ""
+    system_message: str=""
 
 @dataclass
 class LoadingModelConfig:

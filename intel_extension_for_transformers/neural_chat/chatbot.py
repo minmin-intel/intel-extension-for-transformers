@@ -43,9 +43,11 @@ def build_chatbot(config: PipelineConfig=None):
         pipeline = build_chatbot()
         response = pipeline.predict(query="Tell me about Intel Xeon Scalable Processors.")
     """
+    print('building chatbot...')
     global plugins
     if not config:
         config = PipelineConfig()
+    print(config)
     # Validate input parameters
     if config.device not in [option.name.lower() for option in DeviceOptions]:
         valid_options = ", ".join([option.name.lower() for option in DeviceOptions])
