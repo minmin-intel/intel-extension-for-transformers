@@ -94,7 +94,7 @@ class Agent_QA():
 
     def pre_llm_inference_actions(self, model_name, query):
         intent = self.intent_detector.intent_detection(model_name, query)
-
+        context = None
         if 'qa' not in intent.lower():
             print("Chat with AI Agent.")
             prompt = generate_prompt(query)
@@ -103,12 +103,12 @@ class Agent_QA():
             if self.retriever:
                 print('retrieving relevant context...')
                 context = self.retriever.get_context(query)
-                print('context: ', context)
+                # print('context: ', context)
                 # print('finished retrieval!')
                 prompt = generate_qa_prompt(query, context, rag_sysm=self.rag_sysm)
-                print('prompt for QA agent: ', prompt)
+                # print('prompt for QA agent: ', prompt)
             else:
                 print('did not find a retriever...')
                 prompt = generate_prompt(query)
-        return prompt
+        return prompt, context
 

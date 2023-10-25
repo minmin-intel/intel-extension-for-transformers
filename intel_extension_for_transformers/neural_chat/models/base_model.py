@@ -220,6 +220,7 @@ class BaseModel(ABC):
             query_include_prompt = True
 
         # plugin pre actions
+        context = None
         for plugin_name in get_registered_plugins():
             if is_plugin_enabled(plugin_name):
                 plugin_instance = get_plugin_instance(plugin_name)
@@ -228,7 +229,7 @@ class BaseModel(ABC):
                         if plugin_name == "asr" and not is_audio_file(query):
                             continue
                         if plugin_name == "retrieval":
-                            response = plugin_instance.pre_llm_inference_actions(self.model_name, query)
+                            response, context = plugin_instance.pre_llm_inference_actions(self.model_name, query)
                         else:
                             response = plugin_instance.pre_llm_inference_actions(query)
                         if plugin_name == "safety_checker" and response:
@@ -254,15 +255,17 @@ class BaseModel(ABC):
                         response = plugin_instance.post_llm_inference_actions(response)
 
         # clear plugins config
-        for key in plugins:
-            plugins[key] = {
-                "enable": False,
-                "class": None,
-                "args": {},
-                "instance": None
-            }
+        # MH: why do this? 
+        # If I want to continue to use RAG, I should have the retrieval plugin enabled.
+        # for key in plugins:
+        #     plugins[key] = {
+        #         "enable": False,
+        #         "class": None,
+        #         "args": {},
+        #         "instance": None
+        #     }
 
-        return response
+        return response, context
 
     def chat_stream(self, query, config=None):
         """
@@ -333,7 +336,7 @@ class BaseModel(ABC):
 
         self.conv_template.append_message(self.conv_template.roles[0], prompt)
         self.conv_template.append_message(self.conv_template.roles[1], None)
-        print('after prepare prompt: ', self.conv_template.get_prompt())
+        # print('after prepare prompt: ', self.conv_template.get_prompt())
         return self.conv_template.get_prompt()
 
     def register_plugin_instance(self, plugin_name, instance):

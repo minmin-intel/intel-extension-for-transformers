@@ -40,7 +40,7 @@ def generate_qa_prompt(query, context=None, history=None, rag_sysm=None):
             sysm=f.read()
         print('rag sysm: ', sysm)
         print('setting rag system message...')
-        conv.set_system_message(sysm)
+        conv.set_system_message(sysm+'\n')
     return conv.get_prompt()
 
 
