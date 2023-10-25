@@ -398,6 +398,7 @@ class GenerationConfig:
     ipex_int8: bool = False
     task: str = ""
     system_message: str=""
+    single_turn: bool=False
 
 @dataclass
 class LoadingModelConfig:

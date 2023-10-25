@@ -19,7 +19,7 @@ from intel_extension_for_transformers.neural_chat.prompts import PromptTemplate
 
 """The function for generating the target prompt."""
 
-def generate_qa_prompt(query, context=None, history=None):
+def generate_qa_prompt(query, context=None, history=None, rag_sysm=None):
     if context and history:
         conv = PromptTemplate("rag_with_context_memory")
         conv.append_message(conv.roles[0], query)
@@ -35,6 +35,12 @@ def generate_qa_prompt(query, context=None, history=None):
         conv = PromptTemplate("rag_without_context")
         conv.append_message(conv.roles[0], query)
         conv.append_message(conv.roles[1], None)
+    if rag_sysm:
+        with open(rag_sysm, 'r') as f:
+            sysm=f.read()
+        print('rag sysm: ', sysm)
+        print('setting rag system message...')
+        conv.set_system_message(sysm)
     return conv.get_prompt()
 
 

@@ -26,7 +26,7 @@ class Agent_QA():
     def __init__(self, persist_dir="./output", process=True, input_path=None,
                  embedding_model="hkunlp/instructor-large", max_length=2048, retrieval_type="dense",
                  document_store=None, top_k=1, search_type="mmr", search_kwargs={"k": 1, "fetch_k": 5},
-                 append=True, index_name="elastic_index_1",
+                 append=True, index_name="elastic_index_1", rag_sysm=None,
                  asset_path="/intel-extension-for-transformers/intel_extension_for_transformers/neural_chat/assets"):
         self.model = None
         self.tokenizer = None
@@ -34,6 +34,7 @@ class Agent_QA():
         self.retriever = None
         self.intent_detector = IntentDetector()
         script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.rag_sysm = rag_sysm # .txt file that contains system message for rag
         
         if os.path.exists(input_path):
             self.input_path = input_path
@@ -54,25 +55,38 @@ class Agent_QA():
             self.db = self.doc_parser.KB_construct(self.input_path)
             print('Finished adding documents to docstore')
         else:
-            print("Make sure the current persist path is new!")
-            if os.path.exists(persist_dir):
-                if bool(os.listdir(persist_dir)):
-                    print('Loading existing doc store...')
-                    self.doc_parser = DocumentIndexing(retrieval_type=self.retrieval_type,
-                                                   document_store=document_store,
-                                                   persist_dir=persist_dir, process=process,
-                                                   embedding_model=embedding_model,
-                                                   max_length=max_length,
-                                                   index_name=index_name)
-                    self.db = self.doc_parser.load(self.input_path)
-                    print('Finished loading docstore!')
-                else:
-                    self.doc_parser = DocumentIndexing(retrieval_type=self.retrieval_type,
-                                                       document_store=document_store,
-                                                       persist_dir=persist_dir, process=process,
-                                                       embedding_model=embedding_model, max_length=max_length,
-                                                       index_name = index_name)
-                    self.db = self.doc_parser.KB_construct(self.input_path)
+            # print("Make sure the current persist path is new!")
+            if self.retrieval_type == 'dense':
+                if os.path.exists(persist_dir):
+                    if bool(os.listdir(persist_dir)):
+                        print('Loading existing doc store...')
+                        self.doc_parser = DocumentIndexing(retrieval_type=self.retrieval_type,
+                                                    document_store=document_store,
+                                                    persist_dir=persist_dir, process=process,
+                                                    embedding_model=embedding_model,
+                                                    max_length=max_length,
+                                                    index_name=index_name)
+                        self.db = self.doc_parser.load(self.input_path)
+                        print('Finished loading docstore!')
+                    else:
+                        print('Did not find persistent database, creating new one...')
+                        self.doc_parser = DocumentIndexing(retrieval_type=self.retrieval_type,
+                                                        document_store=document_store,
+                                                        persist_dir=persist_dir, process=process,
+                                                        embedding_model=embedding_model, max_length=max_length,
+                                                        index_name = index_name)
+                        self.db = self.doc_parser.KB_construct(self.input_path)
+            elif self.retrieval_type=='sparse':
+                print('Loading existing elasticsearch doc store...')
+                self.doc_parser = DocumentIndexing(retrieval_type=self.retrieval_type,
+                                            document_store=document_store,
+                                            persist_dir=persist_dir, process=process,
+                                            embedding_model=embedding_model,
+                                            max_length=max_length,
+                                            index_name=index_name)
+                self.db = self.doc_parser.load(self.input_path)
+            else:
+                raise ValueError('{} retrieval type is not supported!'.format(self.retrieval_type))
         self.retriever = Retriever(retrieval_type=self.retrieval_type, document_store=self.db, top_k=top_k,
                                    search_type=search_type, search_kwargs=search_kwargs)
 
@@ -87,9 +101,14 @@ class Agent_QA():
         else:
             print("Chat with QA agent.")
             if self.retriever:
+                print('retrieving relevant context...')
                 context = self.retriever.get_context(query)
-                prompt = generate_qa_prompt(query, context)
+                print('context: ', context)
+                # print('finished retrieval!')
+                prompt = generate_qa_prompt(query, context, rag_sysm=self.rag_sysm)
+                print('prompt for QA agent: ', prompt)
             else:
+                print('did not find a retriever...')
                 prompt = generate_prompt(query)
         return prompt
 

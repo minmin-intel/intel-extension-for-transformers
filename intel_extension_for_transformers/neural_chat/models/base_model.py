@@ -240,7 +240,7 @@ class BaseModel(ABC):
 
         if not query_include_prompt:
             print('query_include_prompt = False')
-            query = self.prepare_prompt(query, self.model_name, config.task, config.system_message)
+            query = self.prepare_prompt(query, self.model_name, config.task, config.system_message, config.single_turn)
         # LLM inference
         print('query passed into LLM: ', query)
         response = predict(**construct_parameters(query, self.model_name, self.device, config))
@@ -262,7 +262,7 @@ class BaseModel(ABC):
                 "instance": None
             }
 
-        return query, response
+        return response
 
     def chat_stream(self, query, config=None):
         """
@@ -322,9 +322,15 @@ class BaseModel(ABC):
                 raise NotImplementedError(f"Unsupported task {task}.")
             self.conv_template = PromptTemplate(name)
 
-    def prepare_prompt(self, prompt: str, model_path: str, task: str = "", system_message: str=""):
+    def prepare_prompt(self, prompt: str, model_path: str, task: str = "", system_message: str="", single_turn: bool=False):
         self.get_conv_template(model_path, task)
         self.conv_template.set_system_message(system_message)
+        if single_turn == True:
+            # remove [self.conv_template.roles[0], message] from self.conv_template.conv.messages
+            # print('existing messages: ', self.conv_template.conv.messages)
+            self.conv_template.conv.messages = [] # from test, we saw that the first time messages = []
+            # print('remaining messages: ', self.conv_template.conv.messages)
+
         self.conv_template.append_message(self.conv_template.roles[0], prompt)
         self.conv_template.append_message(self.conv_template.roles[1], None)
         print('after prepare prompt: ', self.conv_template.get_prompt())

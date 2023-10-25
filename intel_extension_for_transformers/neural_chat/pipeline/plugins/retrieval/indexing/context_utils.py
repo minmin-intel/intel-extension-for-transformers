@@ -95,6 +95,7 @@ def load_json(input, process, max_length):
             sub['doc'] = re.sub(r'\s+', ' ', sub['doc'])
             new_doc = [sub['doc'], sub['doc_id']]
             new_collect.append(new_doc)
+            print('new doc: ', new_doc)
         else:
             for sub in data:
                 sub['doc'].replace('#', " ")
@@ -110,6 +111,7 @@ def load_json(input, process, max_length):
                         new_sens.append(split_sen[num])
 
             paragraphs = list(set(new_sens))
+            print('paragraphs:',paragraphs)
             for paragraph in paragraphs:
                 new_doc = [paragraph, sub['doc_id']]
                 new_collect.append(new_doc)
