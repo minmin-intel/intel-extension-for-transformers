@@ -252,7 +252,10 @@ class BaseModel(ABC):
                 plugin_instance = get_plugin_instance(plugin_name)
                 if plugin_instance:
                     if hasattr(plugin_instance, 'post_llm_inference_actions'):
-                        response = plugin_instance.post_llm_inference_actions(response)
+                        if plugin_name == "retrieval":
+                            response = plugin_instance.post_llm_inference_actions(response, context)
+                        else:
+                            response = plugin_instance.post_llm_inference_actions(response)
 
         # clear plugins config
         # MH: why do this? 

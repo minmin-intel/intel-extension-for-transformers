@@ -17,15 +17,16 @@
 
 import os
 from .retrieval_base import Retriever
-from .detector.intent_detection import IntentDetector
+from .detector.intent_detection import IntentDetector, StatementVerifier
 from .indexing.indexing import DocumentIndexing
 from intel_extension_for_transformers.neural_chat.pipeline.plugins.prompt.prompt_template \
     import generate_qa_prompt, generate_prompt
+from nltk.tokenize import sent_tokenize
 
 class Agent_QA():
     def __init__(self, persist_dir="./output", process=True, input_path=None,
                  embedding_model="hkunlp/instructor-large", max_length=2048, retrieval_type="dense",
-                 document_store=None, top_k=1, search_type="mmr", search_kwargs={"k": 1, "fetch_k": 5},
+                 document_store=None, top_k=1, rerank_topk=1, search_type="mmr", search_kwargs={"k": 1, "fetch_k": 5},
                  append=True, index_name="elastic_index_1", rag_sysm=None,
                  asset_path="/intel-extension-for-transformers/intel_extension_for_transformers/neural_chat/assets"):
         self.model = None
@@ -33,6 +34,7 @@ class Agent_QA():
         self.retrieval_type = retrieval_type
         self.retriever = None
         self.intent_detector = IntentDetector()
+        self.verifier = StatementVerifier()
         script_dir = os.path.dirname(os.path.abspath(__file__))
         self.rag_sysm = rag_sysm # .txt file that contains system message for rag
         
@@ -87,7 +89,7 @@ class Agent_QA():
                 self.db = self.doc_parser.load(self.input_path)
             else:
                 raise ValueError('{} retrieval type is not supported!'.format(self.retrieval_type))
-        self.retriever = Retriever(retrieval_type=self.retrieval_type, document_store=self.db, top_k=top_k,
+        self.retriever = Retriever(retrieval_type=self.retrieval_type, document_store=self.db, top_k=top_k,rerank_topk=rerank_topk,
                                    search_type=search_type, search_kwargs=search_kwargs)
 
 
@@ -111,4 +113,17 @@ class Agent_QA():
                 print('did not find a retriever...')
                 prompt = generate_prompt(query)
         return prompt, context
+    
+    def post_llm_inference_actions(self, response, context):
+        # split response by sentence
+        sentences = sent_tokenize(response)
+        # check if each sentence is supported by context
+        verified_sentences = ""
+        for s in sentences:
+            if self.verifier.verify(s, context) == True:
+                verified_sentences += (s+" ")
+        
+        # regenerate response 
+
+
 
