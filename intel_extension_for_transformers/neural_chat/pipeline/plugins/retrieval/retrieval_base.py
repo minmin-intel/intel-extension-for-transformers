@@ -24,7 +24,7 @@ class Retriever():
     """The wrapper for sparse retriever and dense retriever."""
 
     def __init__(self, retrieval_type="dense", document_store=None,
-                 top_k=1, rerank_topk=1,search_type="mmr", search_kwargs={"k": 1, "fetch_k": 5}):
+                 top_k=1, rerank_topk=1, score_threshold=0.8,search_type="mmr", search_kwargs={"k": 1, "fetch_k": 5}):
         self.retrieval_type = retrieval_type
         if not document_store:
             raise ValueError(f"Please give a knowledge base for retrieval.")
@@ -33,8 +33,14 @@ class Retriever():
                                              search_type=search_type,
                                              search_kwargs=search_kwargs)
         else:
-            self.retriever = SparseBM25Retriever(document_store=document_store, top_k=top_k, rerank_topk=rerank_topk)
+            self.retriever = SparseBM25Retriever(document_store=document_store, 
+                                                 top_k=top_k, 
+                                                 rerank_topk=rerank_topk,
+                                                 score_threshold=score_threshold)
 
     def get_context(self, query):
         context = self.retriever.query_the_database(query)
+        return context
+    def get_context_with_keywords(self, keywords, query):
+        context = self.retriever.query_the_database_with_keywords(keywords, query)
         return context

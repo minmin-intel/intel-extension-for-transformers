@@ -253,7 +253,7 @@ class BaseModel(ABC):
                 if plugin_instance:
                     if hasattr(plugin_instance, 'post_llm_inference_actions'):
                         if plugin_name == "retrieval":
-                            response = plugin_instance.post_llm_inference_actions(response, context)
+                            response = plugin_instance.post_llm_inference_actions(self.model_name, response, context)
                         else:
                             response = plugin_instance.post_llm_inference_actions(response)
 

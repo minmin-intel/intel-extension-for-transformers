@@ -38,8 +38,35 @@ def generate_qa_prompt(query, context=None, history=None, rag_sysm=None):
     if rag_sysm:
         with open(rag_sysm, 'r') as f:
             sysm=f.read()
-        print('rag sysm: ', sysm)
-        print('setting rag system message...')
+        # print('rag sysm: ', sysm)
+        # print('setting rag system message...')
+        conv.set_system_message(sysm+'\n')
+    return conv.get_prompt()
+
+
+def generate_qa_prompt_v2(query, context=None, history=None, rag_sysm=None):
+    if context and history:
+        conv = PromptTemplate("rag_with_context_memory_v2")
+        conv.append_message(conv.roles[0], query)
+        conv.append_message(conv.roles[1], context)
+        conv.append_message(conv.roles[2], history)
+        conv.append_message(conv.roles[3], query)
+        conv.append_message(conv.roles[4], None)
+    elif context:
+        conv = PromptTemplate("rag_with_context_memory_v2")
+        conv.append_message(conv.roles[0], query)
+        conv.append_message(conv.roles[1], context)
+        conv.append_message(conv.roles[3], query)
+        conv.append_message(conv.roles[4], None)
+    else:
+        conv = PromptTemplate("rag_without_context")
+        conv.append_message(conv.roles[0], query)
+        conv.append_message(conv.roles[1], None)
+    if rag_sysm:
+        with open(rag_sysm, 'r') as f:
+            sysm=f.read()
+        # print('rag sysm: ', sysm)
+        # print('setting rag system message...')
         conv.set_system_message(sysm+'\n')
     return conv.get_prompt()
 
@@ -61,4 +88,11 @@ def generate_intent_prompt(query):
     conv = PromptTemplate("intent")
     conv.append_message(conv.roles[0], query)
     conv.append_message(conv.roles[1], None)
+    return conv.get_prompt()
+
+def generate_verifier_prompt(query, context):
+    conv = PromptTemplate("verifier")
+    conv.append_message(conv.roles[0], query)
+    conv.append_message(conv.roles[1], context)
+    conv.append_message(conv.roles[2], None)
     return conv.get_prompt()

@@ -17,16 +17,29 @@
 
 import os
 from .retrieval_base import Retriever
-from .detector.intent_detection import IntentDetector, StatementVerifier
+from .detector.intent_detection import IntentDetector
+from .detector.statement_verifier import StatementVerifier
 from .indexing.indexing import DocumentIndexing
 from intel_extension_for_transformers.neural_chat.pipeline.plugins.prompt.prompt_template \
-    import generate_qa_prompt, generate_prompt
+    import generate_qa_prompt, generate_prompt, generate_qa_prompt_v2
 from nltk.tokenize import sent_tokenize
+from multi_rake import Rake
+
+
+def extract_keywords_rake(query):
+    rake = Rake()
+    keywords = rake.apply(query)
+    keywords_list = []
+    for kw in keywords:
+        keywords_list.append(kw[0])
+    return keywords_list[:3]
+
 
 class Agent_QA():
     def __init__(self, persist_dir="./output", process=True, input_path=None,
                  embedding_model="hkunlp/instructor-large", max_length=2048, retrieval_type="dense",
-                 document_store=None, top_k=1, rerank_topk=1, search_type="mmr", search_kwargs={"k": 1, "fetch_k": 5},
+                 document_store=None, top_k=1, rerank_topk=1, score_threshold=0.8,
+                 search_type="mmr", search_kwargs={"k": 1, "fetch_k": 5},
                  append=True, index_name="elastic_index_1", rag_sysm=None,
                  asset_path="/intel-extension-for-transformers/intel_extension_for_transformers/neural_chat/assets"):
         self.model = None
@@ -89,7 +102,8 @@ class Agent_QA():
                 self.db = self.doc_parser.load(self.input_path)
             else:
                 raise ValueError('{} retrieval type is not supported!'.format(self.retrieval_type))
-        self.retriever = Retriever(retrieval_type=self.retrieval_type, document_store=self.db, top_k=top_k,rerank_topk=rerank_topk,
+        self.retriever = Retriever(retrieval_type=self.retrieval_type, document_store=self.db, 
+                                   top_k=top_k,rerank_topk=rerank_topk, score_threshold=score_threshold,
                                    search_type=search_type, search_kwargs=search_kwargs)
 
 
@@ -107,23 +121,34 @@ class Agent_QA():
                 context = self.retriever.get_context(query)
                 # print('context: ', context)
                 # print('finished retrieval!')
-                prompt = generate_qa_prompt(query, context, rag_sysm=self.rag_sysm)
+                if len(context)>0:
+                    prompt = generate_qa_prompt(query, context, rag_sysm=self.rag_sysm)
+                else:
+                    # extract keywords and retrieve again
+                    keywords = extract_keywords_rake(query)
+                    context = self.retriever.get_context_with_keywords(keywords, query)
+                    if len(context)>0:
+                        prompt = generate_qa_prompt(query, context, rag_sysm=self.rag_sysm)
+                    else:
+                        prompt = query
                 # print('prompt for QA agent: ', prompt)
             else:
                 print('did not find a retriever...')
                 prompt = generate_prompt(query)
         return prompt, context
     
-    def post_llm_inference_actions(self, response, context):
-        # split response by sentence
-        sentences = sent_tokenize(response)
-        # check if each sentence is supported by context
-        verified_sentences = ""
-        for s in sentences:
-            if self.verifier.verify(s, context) == True:
-                verified_sentences += (s+" ")
+    # def post_llm_inference_actions(self, model_name, response, context):
+    #     # split response by sentence
+    #     sentences = sent_tokenize(response)
+    #     # check if each sentence is supported by context
+    #     verified_sentences = ""
+    #     for s in sentences:
+    #         if 'yes' in  self.verifier.verify(model_name, s, context).lower():
+    #             verified_sentences += (s+" ")
         
-        # regenerate response 
+    #     # regenerate response 
+    #     # simplest way: just return verified sentences
+    #     return verified_sentences
 
 
 

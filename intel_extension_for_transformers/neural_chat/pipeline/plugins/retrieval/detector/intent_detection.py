@@ -30,9 +30,11 @@ class IntentDetector:
         params = {}
         params["model_name"] = model_name
         params["prompt"] = prompt
+        # print('intent detector prompt:\n', prompt)
         params["temperature"] = 0.001
         params["top_k"] = 1
         params["max_new_tokens"] = 5
         intent = predict(**params)
+        # print('intent output:\n', intent)
         return intent
 
