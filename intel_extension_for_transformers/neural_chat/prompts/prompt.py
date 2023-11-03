@@ -113,6 +113,16 @@ register_conv_template(
     )
 )
 
+register_conv_template(
+    Conversation(
+        name="rag_with_context_memory_nosysm",
+        system_message="",
+        roles=("### Question: ", "### Search Results: ", "### Chat History: ", "### Response: "),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="\n",
+    )
+)
+
 
 
 # Rag without context template

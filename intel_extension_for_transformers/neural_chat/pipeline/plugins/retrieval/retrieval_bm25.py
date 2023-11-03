@@ -48,6 +48,41 @@ def calculate_similarity_scores(model, query, docs):
     return scores
 
 
+def sort_docs_by_scores(docs, scores):
+    return [(x, y) for y, x in sorted(zip(scores, docs), reverse = True)]
+
+
+def score_and_filter_docs(q, docs, model):
+    scores = calculate_similarity_scores(model, q, docs)
+    docs_scores = sort_docs_by_scores(docs, scores)
+    final_docs = []
+    final_scores = []
+    for d, s in docs_scores:
+        if s > 0.2:
+            final_docs.append(d)
+            final_scores.append(s)
+            # print('{:.3f} {}'.format(s, d.content))
+    return final_docs, final_scores
+
+
+
+def retrieve_with_keywords(pipe, keywords, threshold):
+    combined_kw = ""
+    docs = []
+    for kw in keywords:
+        # k = kw[0]
+        combined_kw += (kw +" ")
+        # print('keyword: ', kw)
+        docs.extend(retrieve_docs(pipe, kw, threshold))
+        # print('-'*50)
+    # print('combined keyword: ', combined_kw)
+    docs.extend(retrieve_docs(pipe, combined_kw.strip(),threshold))
+    docs = get_unique_docs(docs)
+    print('{} docs retrieved with keywords'.format(len(docs)))
+    return docs
+
+
+
 class SparseBM25Retriever():
     """Retrieve the document database with BM25 sparse algorithm."""
 
@@ -61,6 +96,8 @@ class SparseBM25Retriever():
             self.pipe.add_node(component=self.retriever, name="BM25Retriever", inputs=["Query"])
             self.pipe.add_node(component=self.ranker, name="Ranker", inputs=["BM25Retriever"])
         self.score_threshold = score_threshold
+        self.top_k = top_k
+        self.rerank_topk = rerank_topk
 
     def query_the_database(self, query):
         if self.pipe==None:
@@ -87,27 +124,24 @@ class SparseBM25Retriever():
         assert self.pipe!=None, "need to have a retriever+ranker pipeline to query with keywords"
         
         similarity_model = CrossEncoder("BAAI/bge-reranker-base")
-        # retrieve docs with keywords
-        combined_kw = ""
-        docs = []
-        for kw in keywords:
-            combined_kw += (kw +" ")
-            docs.extend(retrieve_docs(self.pipe, kw, self.score_threshold))
-
-        docs.extend(retrieve_docs(self.pipe, combined_kw.strip(), self.score_threshold))
+        # retrieve docs with query + keywords
+        docs = self.pipe.run(query)['documents']
+        print('keywords: ', keywords)
+        docs2 = retrieve_with_keywords(self.pipe, keywords, self.score_threshold)
+        docs.extend(docs2)
         docs = get_unique_docs(docs)
-        # print(len(docs))
-        scores = calculate_similarity_scores(similarity_model, query, docs)
-        print(scores)
-
-        docs_scores = [(x, y) for y, x in sorted(zip(scores, docs), reverse = True)]
-
+        docs, scores = score_and_filter_docs(query, docs, similarity_model)
+        # print('{} docs returned'.format(len(docs)))
+        # print('-'*50)
+        n = 0
         context = ""
-        for d, s in docs_scores:
-            if s > 0.2:
-                context = context + d.content + "\n"
-                print('doc: \n', d.content)
-                print('score:\n', s)
+        for doc, score in zip(docs, scores):
+            print('doc:\n', doc.content)
+            print('score:\n', score)
+            context = context + doc.content + "\n"
+            n+=1
+            if n==min(self.top_k, self.rerank_topk):
+                break
 
         if len(context) >0:
             return context.strip()

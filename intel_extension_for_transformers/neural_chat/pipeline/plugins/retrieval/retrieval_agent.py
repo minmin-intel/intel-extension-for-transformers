@@ -24,6 +24,7 @@ from intel_extension_for_transformers.neural_chat.pipeline.plugins.prompt.prompt
     import generate_qa_prompt, generate_prompt, generate_qa_prompt_v2
 from nltk.tokenize import sent_tokenize
 from multi_rake import Rake
+from keybert import KeyBERT
 
 
 def extract_keywords_rake(query):
@@ -34,13 +35,22 @@ def extract_keywords_rake(query):
         keywords_list.append(kw[0])
     return keywords_list[:3]
 
+def extract_keywords_keybert(query):
+    kw_model = KeyBERT(model='all-mpnet-base-v2')
+    keywords = kw_model.extract_keywords(query, keyphrase_ngram_range=(1, 2), 
+                                         stop_words='english', highlight=False,top_n=3)
+
+    keywords_list= list(dict(keywords).keys())
+    # print(keywords_list)
+    return keywords_list
 
 class Agent_QA():
     def __init__(self, persist_dir="./output", process=True, input_path=None,
                  embedding_model="hkunlp/instructor-large", max_length=2048, retrieval_type="dense",
                  document_store=None, top_k=1, rerank_topk=1, score_threshold=0.8,
                  search_type="mmr", search_kwargs={"k": 1, "fetch_k": 5},
-                 append=True, index_name="elastic_index_1", rag_sysm=None,
+                 append=True, index_name="elastic_index_1", retrieve_with_keywords=False,
+                 rag_sysm=None, template_context="rag_with_context_memory", template_no_context="rag_without_context",
                  asset_path="/intel-extension-for-transformers/intel_extension_for_transformers/neural_chat/assets"):
         self.model = None
         self.tokenizer = None
@@ -50,6 +60,9 @@ class Agent_QA():
         self.verifier = StatementVerifier()
         script_dir = os.path.dirname(os.path.abspath(__file__))
         self.rag_sysm = rag_sysm # .txt file that contains system message for rag
+        self.template_context = template_context
+        self.template_no_context = template_no_context
+        self.retrieve_with_keywords = retrieve_with_keywords
         
         if os.path.exists(input_path):
             self.input_path = input_path
@@ -118,19 +131,21 @@ class Agent_QA():
             print("Chat with QA agent.")
             if self.retriever:
                 print('retrieving relevant context...')
-                context = self.retriever.get_context(query)
-                # print('context: ', context)
-                # print('finished retrieval!')
-                if len(context)>0:
-                    prompt = generate_qa_prompt(query, context, rag_sysm=self.rag_sysm)
+                if self.retrieve_with_keywords == False:
+                    context = self.retriever.get_context(query)
+
                 else:
-                    # extract keywords and retrieve again
-                    keywords = extract_keywords_rake(query)
+                    # extract keywords and retrieve with query + keywords
+                    keywords = extract_keywords_keybert(query)
                     context = self.retriever.get_context_with_keywords(keywords, query)
-                    if len(context)>0:
-                        prompt = generate_qa_prompt(query, context, rag_sysm=self.rag_sysm)
-                    else:
-                        prompt = query
+                
+
+                if len(context)>0:
+                    prompt = generate_qa_prompt(query, context, rag_sysm=self.rag_sysm, 
+                                                    template_context=self.template_context,
+                                                    template_no_context=self.template_no_context)
+                else:
+                    prompt = query
                 # print('prompt for QA agent: ', prompt)
             else:
                 print('did not find a retriever...')
