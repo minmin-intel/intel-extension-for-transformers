@@ -33,7 +33,7 @@ class StatementVerifier:
         print('verifier prompt: \n', prompt)
         params["temperature"] = 0.001
         params["top_k"] = 1
-        params["max_new_tokens"] = 5
+        params["max_new_tokens"] = 256
         prediction = predict(**params).replace(prompt, "")
         print('verifier output:\n', prediction)
         return prediction

@@ -364,6 +364,7 @@ def load_model(
         or re.search("neural-chat-7b-v2", model_name, re.IGNORECASE)
         or re.search("qwen", model_name, re.IGNORECASE)
         or re.search("starcoder", model_name, re.IGNORECASE)
+        or re.search("mistral", model_name, re.IGNORECASE)
     ) and not ipex_int8:
         with smart_context_manager(use_deepspeed=use_deepspeed):
             model = AutoModelForCausalLM.from_pretrained(

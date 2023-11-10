@@ -69,6 +69,9 @@ def build_chatbot(config: PipelineConfig=None):
     elif "Qwen" in config.model_name_or_path:
         from .models.qwen_model import QwenModel
         adapter = QwenModel()
+    elif "Mistral" in config.model_name_or_path:
+        from .models.mistral_model import MistralModel
+        adapter = MistralModel()    
     elif "opt" in config.model_name_or_path or \
          "gpt" in config.model_name_or_path or \
          "flan-t5" in config.model_name_or_path or \

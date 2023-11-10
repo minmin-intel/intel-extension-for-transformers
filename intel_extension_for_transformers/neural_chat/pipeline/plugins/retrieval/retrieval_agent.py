@@ -154,12 +154,15 @@ class Agent_QA():
     
     # def post_llm_inference_actions(self, model_name, response, context):
     #     # split response by sentence
-    #     sentences = sent_tokenize(response)
+    #     # sentences = sent_tokenize(response)
+    #     sentences = response.split('\n')
     #     # check if each sentence is supported by context
     #     verified_sentences = ""
     #     for s in sentences:
-    #         if 'yes' in  self.verifier.verify(model_name, s, context).lower():
-    #             verified_sentences += (s+" ")
+    #         if len(s)<5:
+    #             continue
+    #         if 'yes' in  self.verifier.verify(model_name, s+'\n', context).lower():
+    #             verified_sentences += (s+"\n")
         
     #     # regenerate response 
     #     # simplest way: just return verified sentences

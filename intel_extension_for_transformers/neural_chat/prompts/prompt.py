@@ -168,8 +168,8 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="verifier",
-        system_message="Is the Statement below supported by the provided Context? ",
-        roles=("Statement: ", "Context: ", "Response: "),
+        system_message="Is the Claim below supported by the Search Results? Think step by step. Respond with Yes or No.\n",
+        roles=("Claim: ", "Search Results: ", "Response: "),
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="\n",
     )

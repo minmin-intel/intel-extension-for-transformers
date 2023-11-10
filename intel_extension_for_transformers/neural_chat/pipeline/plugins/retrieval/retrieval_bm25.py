@@ -136,9 +136,11 @@ class SparseBM25Retriever():
         n = 0
         context = ""
         for doc, score in zip(docs, scores):
-            print('doc:\n', doc.content)
-            print('score:\n', score)
-            context = context + doc.content + "\n"
+            # print('doc:\n', doc.content)
+            # print('score:\n', score)
+            # temp = "Document [{}]: {}\n".format(n+1, doc.content)
+            temp = doc.content + '\n'
+            context = context + temp
             n+=1
             if n==min(self.top_k, self.rerank_topk):
                 break
