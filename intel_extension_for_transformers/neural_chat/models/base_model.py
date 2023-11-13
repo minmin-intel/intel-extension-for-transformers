@@ -330,12 +330,14 @@ class BaseModel(ABC):
 
     def prepare_prompt(self, prompt: str, model_path: str, task: str = "", system_message: str="", single_turn: bool=False):
         self.get_conv_template(model_path, task)
+        # print('system message: ', system_message)
         self.conv_template.set_system_message(system_message)
+        # print('after setting sysm in prepare prompt:\n', self.conv_template.get_prompt())
         if single_turn == True:
             # remove [self.conv_template.roles[0], message] from self.conv_template.conv.messages
             # print('existing messages: ', self.conv_template.conv.messages)
             self.conv_template.conv.messages = [] # from test, we saw that the first time messages = []
-            # print('remaining messages: ', self.conv_template.conv.messages)
+            # print('after clearing messages: ', self.conv_template.get_prompt())
 
         self.conv_template.append_message(self.conv_template.roles[0], prompt)
         self.conv_template.append_message(self.conv_template.roles[1], None)
