@@ -30,5 +30,5 @@ class ChromaRetriever():
         documents = self.retriever.get_relevant_documents(query)
         context = ""
         for doc in documents: 
-            context = context + doc.page_content + " "
+            context = context + doc.page_content + "\n"
         return context.strip()
