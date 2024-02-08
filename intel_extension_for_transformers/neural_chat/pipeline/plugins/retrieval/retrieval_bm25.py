@@ -86,7 +86,8 @@ def retrieve_with_keywords(pipe, keywords, threshold):
 class SparseBM25Retriever():
     """Retrieve the document database with BM25 sparse algorithm."""
 
-    def __init__(self, document_store = None, top_k = 1, rerank_topk = 1, score_threshold = 0.8):
+    def __init__(self, document_store = None, top_k = 1, rerank_topk = 1, 
+                 score_threshold = 0.8, injection = False):
         assert document_store is not None, "Please give a document database for retrieving."
         self.retriever = BM25Retriever(document_store=document_store, top_k=top_k)
         self.pipe = None
@@ -98,6 +99,7 @@ class SparseBM25Retriever():
         self.score_threshold = score_threshold
         self.top_k = top_k
         self.rerank_topk = rerank_topk
+        self.injection = injection
 
     def query_the_database(self, query):
         if self.pipe==None:
@@ -120,7 +122,7 @@ class SparseBM25Retriever():
             return ""
     
 
-    def query_the_database_with_keywords(self, keywords, query):
+    def query_the_database_with_keywords(self, keywords, query, malicious_injection = ""):
         assert self.pipe!=None, "need to have a retriever+ranker pipeline to query with keywords"
         
         similarity_model = CrossEncoder("BAAI/bge-reranker-base")
@@ -145,6 +147,8 @@ class SparseBM25Retriever():
             if n==min(self.top_k, self.rerank_topk):
                 break
 
+        context = context + malicious_injection
+        
         if len(context) >0:
             return context.strip()
         else:

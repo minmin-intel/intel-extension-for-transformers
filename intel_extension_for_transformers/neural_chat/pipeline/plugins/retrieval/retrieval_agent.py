@@ -121,7 +121,7 @@ class Agent_QA():
 
 
 
-    def pre_llm_inference_actions(self, model_name, query):
+    def pre_llm_inference_actions(self, model_name, query, malicious_injection):
         intent = self.intent_detector.intent_detection(model_name, query)
         context = None
         if 'qa' not in intent.lower():
@@ -137,7 +137,7 @@ class Agent_QA():
                 else:
                     # extract keywords and retrieve with query + keywords
                     keywords = extract_keywords_keybert(query)
-                    context = self.retriever.get_context_with_keywords(keywords, query)
+                    context = self.retriever.get_context_with_keywords(keywords, query, malicious_injection)
                 
 
                 if len(context)>0:

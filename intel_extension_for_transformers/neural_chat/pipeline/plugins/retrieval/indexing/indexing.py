@@ -97,6 +97,7 @@ class DocumentIndexing:
         """
         Construct the local knowledge base based on the uploaded file/files.
         """
+        print('constructing doc store...')
         if self.retrieval_type == "dense":
             if os.path.exists(input):
                 if os.path.isfile(input):
@@ -125,6 +126,7 @@ class DocumentIndexing:
         else:
             if os.path.exists(input):
                 if os.path.isfile(input):
+                    print('parsing documents....')
                     data_collection = self.parse_document(input)
                 elif os.path.isdir(input):
                     data_collection = self.batch_parse_document(input)
@@ -144,6 +146,8 @@ class DocumentIndexing:
                     new_doc = SDocument(content=data) #, meta=metadata)
                     documents.append(new_doc)
                 assert documents != [], "The given file/files cannot be loaded."
+
+                print('writing docs to doc store...')
                 document_store.write_documents(documents)
                 print("The local knowledge base has been successfully built!")
                 return document_store

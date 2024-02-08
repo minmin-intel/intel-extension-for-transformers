@@ -190,7 +190,7 @@ class BaseModel(ABC):
 
         return response
 
-    def predict(self, query, config=None):
+    def predict(self, query, config=None, malicious_injection=""):
         """
         Predict using a non-streaming approach.
 
@@ -229,7 +229,7 @@ class BaseModel(ABC):
                         if plugin_name == "asr" and not is_audio_file(query):
                             continue
                         if plugin_name == "retrieval":
-                            response, context = plugin_instance.pre_llm_inference_actions(self.model_name, query)
+                            response, context = plugin_instance.pre_llm_inference_actions(self.model_name, query, malicious_injection)
                         else:
                             response = plugin_instance.pre_llm_inference_actions(query)
                         if plugin_name == "safety_checker" and response:
