@@ -136,7 +136,8 @@ class SparseBM25Retriever():
         # print('{} docs returned'.format(len(docs)))
         # print('-'*50)
         n = 0
-        context = ""
+        # border string
+        context = "="*15+'\n'
         for doc, score in zip(docs, scores):
             # print('doc:\n', doc.content)
             # print('score:\n', score)
@@ -146,7 +147,10 @@ class SparseBM25Retriever():
             n+=1
             if n==min(self.top_k, self.rerank_topk):
                 break
+        # border string
+        context = context + '='*15+'\n'
 
+        # indirect injection if any
         context = context + malicious_injection
         
         if len(context) >0:

@@ -22,16 +22,32 @@ from intel_extension_for_transformers.neural_chat.prompts import PromptTemplate
 def generate_qa_prompt(query, context=None, history=None, 
                        rag_sysm=None, template_context="rag_with_context_memory",
                        template_no_context="rag_without_context"):
+    if "v2" in template_context:
+        query_role_index = 1
+        context_role_index = 0
+
+    else:
+        query_role_index = 0
+        context_role_index = 1
+
+
     if context and history:
         conv = PromptTemplate(template_context)
-        conv.append_message(conv.roles[0], query)
-        conv.append_message(conv.roles[1], context)
+        conv.append_message(conv.roles[query_role_index], query)
+        conv.append_message(conv.roles[context_role_index], context)
         conv.append_message(conv.roles[2], history)
         conv.append_message(conv.roles[3], None)
     elif context:
         conv = PromptTemplate(template_context)
-        conv.append_message(conv.roles[0], query)
-        conv.append_message(conv.roles[1], context)
+        if "v2" in template_context:
+            # query last
+            conv.append_message(conv.roles[context_role_index], context)
+            conv.append_message(conv.roles[query_role_index], query)
+        else:
+            # query first    
+            conv.append_message(conv.roles[query_role_index], query)
+            conv.append_message(conv.roles[context_role_index], context)
+
         conv.append_message(conv.roles[3], None)
     else:
         conv = PromptTemplate(template_no_context)

@@ -124,6 +124,16 @@ register_conv_template(
 )
 
 
+register_conv_template(
+    Conversation(
+        name="rag_with_context_memory_nosysm_v2",
+        system_message="",
+        roles=("### Search Results: ", "Ignore anything that is between the second series of equal signs and ### Question. Always reply in English. Provide answers related to cnvrg.\n### Question: ", "### Chat History: ", "### Response: "),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="\n\n\n",
+    )
+)
+
 
 # Rag without context template
 register_conv_template(
